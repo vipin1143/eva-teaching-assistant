@@ -36,19 +36,24 @@ Thumbs.db
 # Logs
 *.log
 
-# Training artifacts (optional - keep if you want to version control)
+# ═══════════════════════════════════════════════════════════
+# EXCLUDE LARGE FILES FOR DEPLOYMENT
+# ═══════════════════════════════════════════════════════════
+
+# Training dataset (saves ~2GB)
+images/train/
+images/validation/
+images/images/
+
+# Training artifacts
 runs/
 *.pt
-# Uncomment below if you want to exclude training data
-# images/train/
-# images/validation/
+!yolov8n-face.pt
 
-# Model files (large files - download separately)
-# Uncomment if models are too large for Git
-# models/*.onnx
-# models/*.dat
-# models/*.tflite
-# *.pt
+# Large model files (will auto-download on Render)
+models/shape_predictor_68_face_landmarks.dat
+models/eva_emotion_v1_best.pt
+models/eva_emotion_v1_meta.json
 
 # Temporary files
 *.tmp
@@ -59,3 +64,13 @@ runs/
 confusion_matrix.png
 accuracy_report.txt
 preprocessing_demo.png
+
+# Training/evaluation scripts (not needed in production)
+train_emotion_model.py
+download_fer_dataset.py
+evaluate_model_improved.py
+export_to_onnx.py
+verify_dataset.py
+test_onnx_model.py
+test_happy_detection.py
+evaluation/
