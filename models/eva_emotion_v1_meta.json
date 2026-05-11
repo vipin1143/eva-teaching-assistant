@@ -1,0 +1,28 @@
+{
+  "model_path": "models\\eva_emotion_v1.onnx",
+  "input_size": 96,
+  "input_name": "input",
+  "output_name": "output",
+  "classes": [
+    "angry",
+    "disgust",
+    "fear",
+    "happy",
+    "neutral",
+    "sad",
+    "surprise"
+  ],
+  "preprocess": "imagenet_norm",
+  "mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "input_layout": "NCHW",
+  "final_val_accuracy": 0.4795
+}

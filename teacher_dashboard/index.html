@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EVA – Teacher Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#080b14;--surface:#0f1422;--s2:#161c2e;--s3:#1e2540;
+  --border:#242d45;--accent:#6c63ff;--a2:#00d4ff;
+  --green:#00e5a0;--yellow:#ffc247;--red:#ff4d6d;
+  --orange:#ff8c42;--purple:#b47aff;--text:#dde4f0;--muted:#5a6688;--r:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* SETUP */
+#setupScreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;}
+.setup-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:44px;width:440px;}
+.setup-logo{font-size:2rem;font-weight:700;color:var(--accent);text-align:center;margin-bottom:6px;}
+.setup-sub{color:var(--muted);font-size:.85rem;text-align:center;margin-bottom:32px;}
+.setup-lbl{font-size:.73rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.si{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-size:.9rem;outline:none;margin-bottom:14px;font-family:inherit;transition:border .2s;}
+.si:focus{border-color:var(--accent);}
+.setup-btn{width:100%;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--accent),var(--a2));color:#fff;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .2s;}
+.setup-btn:hover{opacity:.88;}
+.setup-note{color:var(--muted);font-size:.75rem;text-align:center;margin-top:14px;line-height:1.6;}
+.setup-note code{background:var(--s2);padding:2px 7px;border-radius:5px;font-family:'DM Mono',monospace;color:var(--a2);}
+
+/* TOPBAR */
+.topbar{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0;}
+.logo{font-size:1.25rem;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.badge{padding:3px 12px;border-radius:20px;font-size:.73rem;font-weight:600;}
+.b-session{background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.4);color:var(--accent);}
+.b-live{display:flex;align-items:center;gap:5px;background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.3);color:var(--green);}
+.b-off{background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.3);color:var(--red);}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.top-r{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.eng-pill{display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--border);border-radius:20px;padding:4px 14px;font-size:.8rem;}
+.eng-val{font-weight:700;font-size:1rem;transition:color .5s;}
+.clk{font-family:'DM Mono',monospace;font-size:.85rem;color:var(--muted);}
+.btn-end{padding:5px 14px;border-radius:8px;border:1px solid rgba(255,77,109,.4);background:rgba(255,77,109,.1);color:var(--red);font-size:.78rem;cursor:pointer;transition:all .2s;}
+.btn-end:hover{background:rgba(255,77,109,.2);}
+.btn-report{padding:5px 14px;border-radius:8px;border:1px solid rgba(0,229,160,.4);background:rgba(0,229,160,.1);color:var(--green);font-size:.78rem;cursor:pointer;transition:all .2s;}
+.btn-report:hover{background:rgba(0,229,160,.2);}
+
+/* STATS */
+.stats-bar{background:var(--surface);border-bottom:1px solid var(--border);display:flex;padding:0 20px;flex-shrink:0;}
+.st{padding:11px 20px;border-right:1px solid var(--border);display:flex;align-items:center;gap:9px;}
+.st:first-child{padding-left:0;}
+.st:last-child{border-right:none;}
+.st-lbl{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:1px;}
+.st-val{font-size:1.25rem;font-weight:700;line-height:1;transition:all .4s;}
+.cg{color:var(--green);}.cy{color:var(--yellow);}.cr{color:var(--red);}.cp{color:var(--purple);}.cm{color:var(--muted);}
+
+/* MAIN */
+.main{flex:1;display:grid;grid-template-columns:1fr 310px;overflow:hidden;}
+
+/* GRID AREA */
+.ga{padding:16px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;}
+.ga::-webkit-scrollbar{width:4px;}
+.ga::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.area-hdr{display:flex;align-items:center;justify-content:space-between;}
+.area-ttl{font-size:.68rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);}
+.frow{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{padding:3px 10px;border-radius:20px;font-size:.72rem;cursor:pointer;border:1px solid var(--border);background:var(--s2);color:var(--muted);transition:all .2s;}
+.chip.active,.chip:hover{background:rgba(108,99,255,.15);border-color:var(--accent);color:var(--accent);}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:9px;}
+
+/* STUDENT CARD */
+.sc{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:11px;cursor:pointer;transition:all .25s;position:relative;border-left:3px solid var(--border);animation:cIn .35s ease;}
+@keyframes cIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.sc:hover{background:var(--s3);border-color:var(--accent);}
+.sc.alh{border-left-color:var(--red);}
+.sc.alm{border-left-color:var(--yellow);}
+.sc.all{border-left-color:var(--green);}
+.sc.aln{border-left-color:var(--border);}
+@keyframes pulse-join{0%{box-shadow:0 0 0 0 rgba(0,229,160,.7)}100%{box-shadow:0 0 0 14px rgba(0,229,160,0)}}
+.sc.new-join{animation:cIn .35s ease,pulse-join .8s ease;}
+.ct{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:#fff;flex-shrink:0;}
+.adot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.sn{font-weight:600;font-size:.82rem;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.se{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;padding:2px 8px;border-radius:12px;border:1px solid;font-weight:500;margin-bottom:5px;transition:all .4s;}
+.sm{font-size:.68rem;color:var(--muted);}
+.smsg{font-size:.7rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px;font-style:italic;}
+
+/* Feature 4: Emotion timeline mini-bars on each card */
+.etl{display:flex;gap:2px;margin-top:5px;height:6px;}
+.etl-dot{flex:1;border-radius:2px;min-width:4px;}
+
+.sdot{position:absolute;top:8px;right:8px;width:6px;height:6px;border-radius:50%;}
+.sf{background:var(--a2);}.sc2{background:var(--yellow);}.ss{background:var(--purple);}.sn2{background:var(--muted);}
+.e-happy{color:#ffd166;border-color:rgba(255,209,102,.3);background:rgba(255,209,102,.08);}
+.e-engaged{color:var(--green);border-color:rgba(0,229,160,.3);background:rgba(0,229,160,.08);}
+.e-neutral{color:var(--muted);border-color:rgba(90,102,136,.3);background:rgba(90,102,136,.08);}
+.e-confused{color:var(--orange);border-color:rgba(255,140,66,.3);background:rgba(255,140,66,.1);}
+.e-sad{color:#74b9ff;border-color:rgba(116,185,255,.3);background:rgba(116,185,255,.08);}
+.e-angry,.e-frustrated{color:var(--red);border-color:rgba(255,77,109,.3);background:rgba(255,77,109,.08);}
+.e-bored,.e-disengaged{color:var(--purple);border-color:rgba(180,122,255,.3);background:rgba(180,122,255,.08);}
+.e-anxious{color:var(--yellow);border-color:rgba(255,194,71,.3);background:rgba(255,194,71,.08);}
+.e-surprise{color:var(--a2);border-color:rgba(0,212,255,.3);background:rgba(0,212,255,.08);}
+
+/* EMPTY GRID */
+.egrid{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--muted);text-align:center;gap:10px;grid-column:1/-1;}
+.egrid .big{font-size:2.5rem;}
+.egrid p{font-size:.85rem;line-height:1.8;}
+.egrid code{background:var(--s2);padding:3px 8px;border-radius:6px;font-family:'DM Mono',monospace;font-size:.8rem;color:var(--a2);}
+.egrid .sid{font-size:1.8rem;font-weight:700;color:var(--accent);font-family:'DM Mono',monospace;background:var(--s2);padding:6px 20px;border-radius:10px;border:1px solid var(--border);}
+
+/* NOTIFICATION PANEL */
+.np{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.phdr{padding:13px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.pttl{font-weight:600;font-size:.88rem;}
+.nbadge{background:var(--red);color:#fff;border-radius:20px;padding:1px 8px;font-size:.7rem;font-weight:700;min-width:20px;text-align:center;}
+.nbadge.z{background:var(--s3);color:var(--muted);}
+.nlist{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px;}
+.nlist::-webkit-scrollbar{width:3px;}
+.nlist::-webkit-scrollbar-thumb{background:var(--border);}
+.nc{border-radius:8px;padding:10px 12px;border-left:3px solid;position:relative;animation:nIn .3s ease;}
+@keyframes nIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+.nv-urgent{background:rgba(255,77,109,.1);border-color:var(--red);}
+.nv-high{background:rgba(255,140,66,.1);border-color:var(--orange);}
+.nv-medium{background:rgba(255,194,71,.1);border-color:var(--yellow);}
+.nv-info{background:rgba(0,229,160,.1);border-color:var(--green);}
+.nt{font-weight:600;font-size:.8rem;margin-bottom:3px;}
+.nb{font-size:.73rem;color:var(--muted);margin-bottom:3px;line-height:1.45;}
+.na{font-size:.68rem;font-style:italic;color:var(--a2);margin-bottom:4px;}
+
+/* Feature 1: AI Suggestion box */
+.ai-suggest{background:rgba(108,99,255,.08);border:1px solid rgba(108,99,255,.3);border-radius:6px;padding:7px 10px;margin-top:4px;}
+.ai-suggest-lbl{font-size:.65rem;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}
+.ai-suggest-txt{font-size:.75rem;color:var(--text);line-height:1.5;}
+
+.ntime{font-size:.67rem;color:var(--muted);font-family:'DM Mono',monospace;}
+.ndis{position:absolute;top:7px;right:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.95rem;padding:2px 4px;border-radius:4px;transition:color .2s;}
+.ndis:hover{color:var(--text);}
+.enotif{text-align:center;padding:36px 16px;color:var(--muted);font-size:.8rem;line-height:1.7;}
+
+/* ENGAGEMENT BAR */
+.ew{padding:11px 14px;border-top:1px solid var(--border);flex-shrink:0;}
+.el{display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);margin-bottom:5px;}
+.ebg{height:7px;background:var(--s3);border-radius:4px;overflow:hidden;}
+.ef{height:100%;border-radius:4px;transition:width .8s ease,background .8s ease;}
+
+/* Feature 2: Timeline panel tab */
+.tab-row{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
+.tab{padding:8px 14px;font-size:.75rem;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-content{display:none;flex:1;overflow-y:auto;padding:10px;}
+.tab-content.active{display:flex;flex-direction:column;gap:7px;}
+
+/* Timeline chart */
+.tl-wrap{padding:14px;}
+.tl-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.75rem;}
+.tl-name{width:80px;color:var(--muted);text-overflow:ellipsis;overflow:hidden;white-space:nowrap;}
+.tl-bar{flex:1;display:flex;gap:1px;height:14px;}
+.tl-seg{border-radius:2px;flex:1;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--s3);border:1px solid var(--border);border-radius:10px;padding:10px 20px;font-size:.82rem;color:var(--text);animation:tIn .3s ease;z-index:9999;pointer-events:none;}
+@keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* Analytics comparative bars */
+.cmp-row{display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:.72rem;}
+.cmp-lbl{width:65px;color:var(--muted);text-align:right;font-size:.68rem;}
+.cmp-group{flex:1;display:flex;flex-direction:column;gap:3px;}
+.cmp-bar-bg{height:10px;background:var(--border);border-radius:3px;overflow:hidden;}
+.cmp-bar-fill{height:100%;border-radius:3px;}
+.cmp-val{width:28px;font-weight:600;font-size:.7rem;}
+
+/* Feature 5: Sound toggle */
+.sound-btn{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--s2);color:var(--muted);font-size:.72rem;cursor:pointer;transition:all .2s;}
+.sound-btn.on{border-color:var(--green);color:var(--green);background:rgba(0,229,160,.1);}
+
+/* Legend */
+.leg{display:flex;gap:10px;font-size:.68rem;color:var(--muted);}
+.ld{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:3px;}
+</style>
+</head>
+<body>
+
+<!-- ════ SETUP SCREEN ════ -->
+<div id="setupScreen">
+  <div class="setup-card">
+    <div class="setup-logo">EVA</div>
+    <div class="setup-sub">Teacher Dashboard — Start a live session</div>
+    <div class="setup-lbl">Your Name</div>
+    <input class="si" id="teacherName" placeholder="e.g. Prof. Sharma" />
+    <div class="setup-lbl">Class Name</div>
+    <input class="si" id="className" placeholder="e.g. Computer Science X-B" />
+    <div class="setup-lbl">Subject</div>
+    <select class="si" id="subjectSel">
+      <option value="general">General</option>
+      <option value="math">Mathematics</option>
+      <option value="science">Science</option>
+      <option value="english">English</option>
+      <option value="coding" selected>Programming / CS</option>
+      <option value="history">History</option>
+    </select>
+    <button class="setup-btn" onclick="startSession()">🚀 Start Session</button>
+    <div class="setup-note">A <strong>Session ID</strong> will be generated.<br>Share it with students → they open <code>localhost:8000/student</code></div>
+  </div>
+</div>
+
+<!-- ════ TOP BAR ════ -->
+<div class="topbar" id="topbar" style="display:none">
+  <span class="logo">EVA</span>
+  <span class="badge b-session" id="sessionBadge">Session #—</span>
+  <span class="badge b-off" id="wsBadge">⚡ Connecting...</span>
+  <span style="color:var(--muted);font-size:.82rem" id="classLabel">—</span>
+  <div class="top-r">
+    <button class="sound-btn on" id="soundBtn" onclick="toggleSound()" title="Feature 5: Sound alerts">🔔 Sound ON</button>
+    <div class="eng-pill">Class engagement&nbsp;<span class="eng-val cg" id="engPct">0%</span></div>
+    <span class="clk" id="clock">00:00:00</span>
+    <button class="btn-report" onclick="openReport()" title="Feature 3: Session Report">📊 Report</button>
+    <button class="btn-end" onclick="endSession()">End Session</button>
+  </div>
+</div>
+
+<!-- ════ STATS BAR ════ -->
+<div class="stats-bar" id="statsBar" style="display:none">
+  <div class="st"><span>👥</span><div><div class="st-lbl">Students</div><div class="st-val cm" id="stTotal">0</div></div></div>
+  <div class="st"><span>🟢</span><div><div class="st-lbl">Engaged</div><div class="st-val cg" id="stEng">0</div></div></div>
+  <div class="st"><span>🟡</span><div><div class="st-lbl">Disengaged</div><div class="st-val cy" id="stDis">0</div></div></div>
+  <div class="st"><span>🔴</span><div><div class="st-lbl">Need Help</div><div class="st-val cr" id="stHelp">0</div></div></div>
+  <div class="st"><span>💬</span><div><div class="st-lbl">Chat Messages</div><div class="st-val cp" id="stChat">0</div></div></div>
+  <div class="st"><span>🔔</span><div><div class="st-lbl">Alerts Sent</div><div class="st-val cy" id="stAlerts">0</div></div></div>
+</div>
+
+<!-- ════ MAIN ════ -->
+<div class="main" id="mainArea" style="display:none">
+
+  <!-- Student grid -->
+  <div class="ga">
+    <div class="area-hdr">
+      <span class="area-ttl" id="gridTitle">Waiting for students...</span>
+      <div class="leg">
+        <span><span class="ld" style="background:var(--a2)"></span>Face</span>
+        <span><span class="ld" style="background:var(--yellow)"></span>Chat</span>
+        <span><span class="ld" style="background:var(--purple)"></span>Screen</span>
+      </div>
+    </div>
+    <div class="frow">
+      <span class="chip active" onclick="setFilter('all',this)">All</span>
+      <span class="chip" onclick="setFilter('help',this)">🔴 Need Help</span>
+      <span class="chip" onclick="setFilter('confused',this)">🤔 Confused</span>
+      <span class="chip" onclick="setFilter('disengaged',this)">😶 Disengaged</span>
+      <span class="chip" onclick="setFilter('engaged',this)">😊 Engaged</span>
+    </div>
+    <div class="sgrid" id="studentGrid">
+      <div class="egrid" id="emptyGrid">
+        <div class="big">👋</div>
+        <p>No students yet.<br>Share this Session ID:</p>
+        <div class="sid" id="shareId">—</div>
+        <p>Students open <code>localhost:8000/student</code></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel with tabs -->
+  <div class="np">
+    <div class="tab-row">
+      <div class="tab active" onclick="switchTab('alerts',this)">🔔 Alerts</div>
+      <div class="tab" onclick="switchTab('timeline',this)">📈 Timeline</div>
+      <div class="tab" onclick="switchTab('analytics',this)">📊 Analytics</div>
+    </div>
+    <div class="tab-content active" id="tab-alerts">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 4px 0">
+        <span class="nbadge z" id="notifBadge">0</span>
+        <span style="font-size:.68rem;color:var(--muted)">latest first</span>
+      </div>
+      <div id="notifList" style="display:flex;flex-direction:column;gap:7px;margin-top:6px">
+        <div class="enotif" id="emptyNotif">No alerts yet.<br>Monitoring in progress...</div>
+      </div>
+    </div>
+    <!-- Feature 2: Timeline tab -->
+    <div class="tab-content" id="tab-timeline">
+      <div style="padding:8px 4px;font-size:.75rem;color:var(--muted)">Emotion history per student (latest → oldest)</div>
+      <div id="timelineContent"></div>
+    </div>
+
+    <!-- Analytics tab -->
+    <div class="tab-content" id="tab-analytics" style="padding:8px;">
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:10px">Live class emotion analytics</div>
+
+      <!-- Mini donut chart -->
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Emotion Distribution</div>
+        <div style="position:relative;height:140px;">
+          <canvas id="liveDonut"></canvas>
+        </div>
+      </div>
+
+      <!-- Comparative analysis -->
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">vs Benchmark</div>
+        <div id="compBars"></div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:8px">Benchmark: typical online class</div>
+      </div>
+
+      <!-- Mini bar chart -->
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px;">
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Emotion Counts</div>
+        <div style="position:relative;height:120px;">
+          <canvas id="liveBar"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="ew">
+      <div class="el"><span>Class engagement</span><span id="engPctBar">0%</span></div>
+      <div class="ebg"><div class="ef" id="engBar" style="width:0%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Feature 5: Audio context (sound alerts) -->
+<audio id="alertSound" preload="auto">
+  <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFhYmKioqKioqJiIeGhYSCgH97eHVzcXBvcHFzdHV3eXt9f4GDhIWGh4iIiImJiYmIiIeGhYOBf317eXd1c3FwcHBxcnN1d3l7fX+BhIaIiYqLi4uLiouKiYiHhoSDgH57eHVzcXBwcXJ0dXd5e3+Bg4WIiYqKioqKiYmIh4aFg4F/fXt5d3V0cnFwcHFydHV3eXt9f4GDhYeIiYqKioqKiYmIh4aFg4F/fXt5d3V0cnFwcHFydHV3eXt9gIKEhoiJioqKioqJiYiHhoWDgX97eXd1c3FwcHBxcnN1d3l7fX+BhIaIiYqLi4uLi4qJiIeGhYOBf317eXd1c3FwcHBxcnN1d3l7fX+BhIaIiYqLi4s=" type="audio/wav">
+</audio>
+
+<script>
+// ═══════════════════════════════
+//  STATE
+// ═══════════════════════════════
+const API = window.location.origin;
+const WS  = API.replace(/^http/, 'ws');
+let sessionId=null, ws=null, wsRetries=0, sessionSecs=0, clockTimer=null;
+let activeFilter='all', chatCount=0, alertCount=0;
+let soundEnabled=true;
+let sessionSubject='general', sessionClass='', sessionTeacher='';
+const students={}, notifications=[];
+// Feature 4: emotion history per student (last 8 readings)
+const emotionHistory={};
+
+const EMOJI={happy:'😊',engaged:'🙂',neutral:'😐',confused:'🤔',bored:'😒',sad:'😢',angry:'😠',anxious:'😰',frustrated:'😤',disengaged:'😶',surprise:'😲',fear:'😨'};
+const ECOLOR={happy:'#ffd166',engaged:'#00e5a0',neutral:'#5a6688',confused:'#ff8c42',sad:'#74b9ff',angry:'#ff4d6d',frustrated:'#ff4d6d',bored:'#b47aff',disengaged:'#b47aff',anxious:'#ffc247',surprise:'#00d4ff'};
+const AV_COLORS=['#6c63ff','#00b4d8','#e76f51','#2a9d8f','#f4a261','#e9c46a','#b47aff','#ff6b9d','#06d6a0','#ffd166','#ef476f','#118ab2','#ff9f1c','#8ac926','#ff595e'];
+const avColor=n=>{let h=0;for(let c of n)h=(h*31+c.charCodeAt(0))&0xffff;return AV_COLORS[h%AV_COLORS.length];};
+const ini=n=>n.split(' ').map(w=>w[0]?.toUpperCase()||'').slice(0,2).join('');
+const alLevel=e=>['angry','frustrated','confused','anxious'].includes(e)?'h':['bored','disengaged','sad'].includes(e)?'m':['happy','engaged','surprise'].includes(e)?'l':'n';
+const alDot=l=>({h:'var(--red)',m:'var(--yellow)',l:'var(--green)',n:'var(--border)'})[l];
+const srcCls=s=>({face:'sf',chat:'sc2',screen:'ss'})[s]||'sn2';
+
+// ═══════════════════════════════
+//  SESSION
+// ═══════════════════════════════
+async function startSession() {
+  const teacher=document.getElementById('teacherName').value.trim()||'Teacher';
+  const cls=document.getElementById('className').value.trim()||'My Class';
+  const subject=document.getElementById('subjectSel').value;
+  sessionSubject=subject; sessionClass=cls; sessionTeacher=teacher;
+  try {
+    const r=await post('/api/session/start',{teacher_name:teacher,class_name:cls,subject});
+    if(!r.success){toast('❌ Could not start session');return;}
+    sessionId=r.session_id;
+    ['setupScreen'].forEach(id=>document.getElementById(id).style.display='none');
+    document.getElementById('topbar').style.display='flex';
+    document.getElementById('statsBar').style.display='flex';
+    document.getElementById('mainArea').style.display='grid';
+    document.getElementById('sessionBadge').textContent=`Session #${sessionId}`;
+    document.getElementById('classLabel').textContent=`${cls} · ${subject}`;
+    document.getElementById('shareId').textContent=sessionId;
+    clockTimer=setInterval(()=>{
+      sessionSecs++;
+      const h=String(Math.floor(sessionSecs/3600)).padStart(2,'0');
+      const m=String(Math.floor(sessionSecs%3600/60)).padStart(2,'0');
+      const s=String(sessionSecs%60).padStart(2,'0');
+      document.getElementById('clock').textContent=`${h}:${m}:${s}`;
+    },1000);
+    connectWS();
+    toast(`✅ Session #${sessionId} started!`,5000);
+  } catch(e){toast('❌ Cannot reach server.');}
+}
+
+async function endSession() {
+  if(!sessionId||!confirm('End this session?'))return;
+  await post(`/api/session/${sessionId}/end`,{}).catch(()=>{});
+  if(ws)ws.close();
+  clearInterval(clockTimer);
+  openReport();
+}
+
+// ═══════════════════════════════
+//  WEBSOCKET
+// ═══════════════════════════════
+function connectWS() {
+  ws=new WebSocket(`${WS}/ws/teacher/${sessionId}`);
+  ws.onopen=()=>{wsRetries=0;setBadge(true);toast('🔗 Live connection established');loadExisting();};
+  ws.onmessage=e=>{try{handle(JSON.parse(e.data));}catch(err){}};
+  ws.onclose=()=>{setBadge(false);if(wsRetries<5){wsRetries++;setTimeout(connectWS,2000*wsRetries);}};
+  setInterval(()=>{if(ws?.readyState===1)ws.send('ping');},20000);
+}
+function setBadge(online){
+  const b=document.getElementById('wsBadge');
+  b.className=online?'badge b-live':'badge b-off';
+  b.innerHTML=online?'<span class="ldot"></span>LIVE':'○ Offline';
+}
+
+// ═══════════════════════════════
+//  EVENT HANDLER
+// ═══════════════════════════════
+function handle(data){
+  switch(data.type){
+    case 'student_joined':
+      if(!students[data.student_name]){
+        students[data.student_name]={name:data.student_name,emotion:'neutral',learning_state:'neutral',confidence:.5,duration:0,source:'none',last_message:''};
+        emotionHistory[data.student_name]=[];
+        renderCard(data.student_name,true);
+        updateStats();
+        toast(`👋 ${data.student_name} joined`);
+        // Feature 5: play sound for join
+        if(soundEnabled) playSound(220);
+      }
+      break;
+    case 'student_emotion_update':
+      upsert({name:data.student_name,emotion:data.emotion,learning_state:data.learning_state||data.emotion,confidence:data.confidence,duration:data.duration_seconds||0,source:data.source||'face'});
+      trackEmotionHistory(data.student_name, data.emotion);
+      break;
+    case 'chat_emotion':
+      chatCount++;
+      document.getElementById('stChat').textContent=chatCount;
+      upsert({name:data.student_name,emotion:data.emotion,learning_state:data.learning_state||data.emotion,confidence:data.confidence,duration:data.duration_seconds||0,source:'chat',last_message:data.message});
+      trackEmotionHistory(data.student_name, data.emotion);
+      if(['confused','angry','frustrated'].includes(data.emotion)){
+        toast(`💬 ${data.student_name}: "${data.message.substring(0,40)}"`,5000);
+      }
+      break;
+    case 'notification':
+      alertCount++;
+      document.getElementById('stAlerts').textContent=alertCount;
+      pushNotif(data);
+      flashCard(data.student_name);
+      // Feature 5: sound alert
+      if(soundEnabled) playSound(440);
+      // Feature 1: get AI suggestion for high-level alerts
+      if(['urgent','high'].includes(data.level)){
+        const s=students[data.student_name];
+        fetchSuggestion(data.id, data.student_name, s?.emotion||'confused', s?.last_message||'', sessionSubject);
+      }
+      break;
+    case 'class_stats_update':
+      if(data.engagement_percent!==undefined) updateEngBar(data.engagement_percent);
+      break;
+  }
+}
+
+// ═══════════════════════════════
+//  STUDENT CARDS
+// ═══════════════════════════════
+function upsert(update){
+  const n=update.name;
+  if(!students[n])students[n]={name:n,emotion:'neutral',learning_state:'neutral',confidence:.5,duration:0,source:'none',last_message:''};
+  Object.assign(students[n],update);
+  renderCard(n,false);
+  updateStats();
+  updateTimeline();
+}
+
+async function loadExisting(){
+  try{
+    const r=await get(`/api/session/${sessionId}/stats`);
+    if(r.success&&r.students?.length){
+      r.students.forEach(s=>{students[s.name]=s;emotionHistory[s.name]=[];renderCard(s.name,false);});
+      updateStats();
+    }
+  }catch(e){}
+}
+
+function setFilter(f,el){
+  activeFilter=f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  const grid=document.getElementById('studentGrid');
+  grid.querySelectorAll('.sc').forEach(c=>c.remove());
+  Object.keys(students).forEach(n=>renderCard(n,false));
+}
+
+function renderCard(name,isNew){
+  const s=students[name];
+  const shouldShow=(()=>{
+    if(activeFilter==='all')return true;
+    if(activeFilter==='help')return alLevel(s.emotion)==='h';
+    if(activeFilter==='confused')return s.emotion==='confused';
+    if(activeFilter==='disengaged')return ['bored','disengaged','sad'].includes(s.emotion);
+    if(activeFilter==='engaged')return ['happy','engaged'].includes(s.emotion);
+    return true;
+  })();
+  const grid=document.getElementById('studentGrid');
+  let card=grid.querySelector(`[data-name="${CSS.escape(name)}"]`);
+  if(!shouldShow){card?.remove();return;}
+  const al=alLevel(s.emotion);
+  const emoji=EMOJI[s.emotion]||'😐';
+  if(!card){card=document.createElement('div');card.dataset.name=name;card.onclick=()=>detail(name);grid.appendChild(card);}
+  card.className=`sc al${al}${isNew?' new-join':''}`;
+
+  // Feature 4: mini emotion timeline bar
+  const hist=(emotionHistory[name]||[]).slice(-8);
+  const timelineDots=hist.map(e=>`<div class="tl-seg" style="background:${ECOLOR[e]||'#5a6688'}66" title="${e}"></div>`).join('');
+
+  card.innerHTML=`
+    <div class="sdot ${srcCls(s.source)}"></div>
+    <div class="ct">
+      <div class="av" style="background:${avColor(name)}">${ini(name)}</div>
+      <div class="adot" style="background:${alDot(al)}"></div>
+    </div>
+    <div class="sn">${name}</div>
+    <div class="se e-${s.emotion}">${emoji} ${s.emotion}</div>
+    <div class="sm">${s.duration||0}s · ${s.source||'none'}</div>
+    ${s.last_message?`<div class="smsg">"${s.last_message}"</div>`:''}
+    ${hist.length>0?`<div class="etl">${timelineDots}</div>`:''}`;
+
+  const cards=grid.querySelectorAll('.sc').length;
+  document.getElementById('emptyGrid').style.display=cards?'none':'flex';
+  document.getElementById('gridTitle').textContent=cards?`${Object.keys(students).length} student${Object.keys(students).length>1?'s':''} · live`:'Waiting for students...';
+}
+
+function updateStats(){
+  const list=Object.values(students);
+  const total=list.length;
+  const engaged=list.filter(s=>['happy','engaged','surprise'].includes(s.emotion)).length;
+  const dis=list.filter(s=>['bored','disengaged','sad'].includes(s.emotion)).length;
+  const help=list.filter(s=>s.alert_level>=2||['confused','angry','frustrated','anxious'].includes(s.emotion)).length;
+  const pct=total?Math.round(engaged/total*100):0;
+  document.getElementById('stTotal').textContent=total;
+  document.getElementById('stEng').textContent=engaged;
+  document.getElementById('stDis').textContent=dis;
+  document.getElementById('stHelp').textContent=help;
+  updateEngBar(pct);
+}
+
+function updateEngBar(pct){
+  document.getElementById('engPct').textContent=pct+'%';
+  document.getElementById('engPctBar').textContent=pct+'%';
+  document.getElementById('engBar').style.width=pct+'%';
+  document.getElementById('engBar').style.background=pct>65?'linear-gradient(90deg,var(--green),var(--a2))':pct>40?'linear-gradient(90deg,var(--yellow),var(--orange))':'linear-gradient(90deg,var(--red),var(--orange))';
+  document.getElementById('engPct').style.color=pct>65?'var(--green)':pct>40?'var(--yellow)':'var(--red)';
+}
+
+// ═══════════════════════════════
+//  NOTIFICATIONS
+// ═══════════════════════════════
+function pushNotif(data){
+  notifications.unshift({id:data.id||Date.now(),level:data.level||'medium',title:data.title||'Alert',body:data.body||'',action:data.action||'',time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),dismissed:false,suggestion:null,student_name:data.student_name});
+  renderNotifs();
+}
+
+// Feature 1: fetch AI suggestion and inject into notification
+async function fetchSuggestion(notifId, studentName, emotion, message, subject){
+  try{
+    const r=await post('/api/suggestion',{student_name:studentName,emotion,message,subject});
+    if(r.success&&r.suggestion){
+      const n=notifications.find(x=>x.id===notifId);
+      if(n){n.suggestion=r.suggestion;renderNotifs();}
+    }
+  }catch(e){}
+}
+
+function renderNotifs(){
+  const active=notifications.filter(n=>!n.dismissed);
+  document.getElementById('notifBadge').textContent=active.length;
+  document.getElementById('notifBadge').className='nbadge'+(active.length?'':' z');
+  document.getElementById('emptyNotif').style.display=active.length?'none':'block';
+  document.getElementById('notifList').innerHTML=active.slice(0,20).map(n=>`
+    <div class="nc nv-${n.level}" id="nc-${n.id}">
+      <button class="ndis" onclick="dis(${n.id})">×</button>
+      <div class="nt">${n.title}</div>
+      <div class="nb">${n.body}</div>
+      ${n.action?`<div class="na">👉 ${n.action}</div>`:''}
+      ${n.suggestion?`<div class="ai-suggest"><div class="ai-suggest-lbl">🧠 AI Suggestion</div><div class="ai-suggest-txt">${n.suggestion}</div></div>`:'<div style="font-size:.68rem;color:var(--muted);font-style:italic">⏳ Getting AI suggestion...</div>'}
+      <div class="ntime">${n.time}</div>
+    </div>`).join('')||'';
+  if(!active.length)document.getElementById('emptyNotif').style.display='block';
+}
+
+function dis(id){const n=notifications.find(n=>n.id===id);if(n)n.dismissed=true;renderNotifs();}
+
+function flashCard(name){
+  if(!name)return;
+  const c=document.querySelector(`[data-name="${CSS.escape(name)}"]`);
+  if(c){c.style.boxShadow='0 0 0 2px var(--red)';setTimeout(()=>c.style.boxShadow='',2500);}
+}
+
+// ═══════════════════════════════
+//  FEATURE 2: TIMELINE
+// ═══════════════════════════════
+function trackEmotionHistory(name, emotion){
+  if(!emotionHistory[name])emotionHistory[name]=[];
+  emotionHistory[name].push(emotion);
+  if(emotionHistory[name].length>20)emotionHistory[name].shift();
+  updateTimeline();
+  // Re-render card to update mini bars
+  renderCard(name, false);
+}
+
+function updateTimeline(){
+  const tl=document.getElementById('timelineContent');
+  const names=Object.keys(emotionHistory).filter(n=>emotionHistory[n].length>0);
+  if(!names.length){tl.innerHTML='<div style="color:var(--muted);font-size:.8rem;padding:8px">No history yet...</div>';return;}
+  tl.innerHTML=names.map(name=>{
+    const hist=emotionHistory[name].slice(-12);
+    const bars=hist.map(e=>`<div class="tl-seg" style="background:${ECOLOR[e]||'#5a6688'}" title="${EMOJI[e]||''}${e}"></div>`).join('');
+    return `<div class="tl-row">
+      <div class="tl-name" title="${name}">${name.split(' ')[0]}</div>
+      <div class="tl-bar">${bars}</div>
+      <div style="font-size:.75rem;margin-left:6px">${EMOJI[hist[hist.length-1]]||'😐'}</div>
+    </div>`;
+  }).join('');
+}
+
+function switchTab(tab, el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(tab==='timeline') updateTimeline();
+  if(tab==='analytics') updateAnalytics();
+}
+
+// ── ANALYTICS CHARTS ──────────────────────────────────────────
+let donutChart=null, barChart=null;
+const BENCHMARKS = {engaged:45, confused:25, negative:15, neutral:35};
+
+function updateAnalytics(){
+  const list = Object.values(students);
+  if(!list.length) return;
+  const total = list.length;
+  const engN  = list.filter(s=>['happy','engaged','surprise'].includes(s.emotion)).length;
+  const conN  = list.filter(s=>['confused','anxious','fear'].includes(s.emotion)).length;
+  const negN  = list.filter(s=>['sad','angry','frustrated','bored','disengaged'].includes(s.emotion)).length;
+  const neuN  = total - engN - conN - negN;
+  const engP  = Math.round(engN/total*100);
+  const conP  = Math.round(conN/total*100);
+  const negP  = Math.round(negN/total*100);
+  const neuP  = Math.round(neuN/total*100);
+
+  Chart.defaults.color='#8892b0';
+  Chart.defaults.borderColor='#242d45';
+
+  // ── Donut ──────────────────────────────────────────
+  const donutCtx = document.getElementById('liveDonut');
+  if(donutCtx){
+    if(donutChart) donutChart.destroy();
+    donutChart = new Chart(donutCtx,{
+      type:'doughnut',
+      data:{
+        labels:['Engaged','Neutral','Confused','Negative'],
+        datasets:[{
+          data:[engP,neuP,conP,negP],
+          backgroundColor:['#00e5a0','#8892b0','#ff8c42','#ff4d6d'],
+          borderColor:'#161c2e',borderWidth:2,hoverOffset:4
+        }]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,cutout:'65%',
+        plugins:{
+          legend:{position:'right',labels:{padding:10,font:{size:9},boxWidth:9}},
+          tooltip:{callbacks:{label:c=>` ${c.label}: ${c.parsed}%`}}
+        }
+      }
+    });
+  }
+
+  // ── Comparative bars ──────────────────────────────
+  const cb = document.getElementById('compBars');
+  if(cb){
+    const rows = [
+      ['😊 Engaged', engP, '#00e5a0', BENCHMARKS.engaged],
+      ['🤔 Confused', conP, '#ff8c42', BENCHMARKS.confused],
+      ['😢 Negative', negP, '#ff4d6d', BENCHMARKS.negative],
+    ];
+    cb.innerHTML = rows.map(([lbl,val,col,bench])=>`
+      <div class="cmp-row">
+        <div class="cmp-lbl">${lbl}</div>
+        <div class="cmp-group">
+          <div class="cmp-bar-bg">
+            <div class="cmp-bar-fill" style="width:${val}%;background:${col}"></div>
+          </div>
+          <div class="cmp-bar-bg">
+            <div class="cmp-bar-fill" style="width:${bench}%;background:#344;border:1px solid #455"></div>
+          </div>
+        </div>
+        <div class="cmp-val" style="color:${col}">${val}%</div>
+      </div>`).join('');
+  }
+
+  // ── Bar chart ──────────────────────────────────────
+  const barCtx = document.getElementById('liveBar');
+  if(barCtx){
+    // Count each emotion
+    const eCounts={};
+    Object.values(students).forEach(s=>{
+      eCounts[s.emotion]=(eCounts[s.emotion]||0)+1;
+    });
+    const labels = Object.keys(eCounts);
+    const vals   = labels.map(k=>eCounts[k]);
+    const colors = labels.map(k=>({'happy':'#00e5a0','engaged':'#00e5a0',
+      'neutral':'#8892b0','confused':'#ff8c42','sad':'#74b9ff',
+      'angry':'#ff4d6d','frustrated':'#ff4d6d','bored':'#b47aff',
+      'disengaged':'#b47aff','anxious':'#ffc247','surprise':'#00d4ff'}[k]||'#8892b0'));
+
+    if(barChart) barChart.destroy();
+    barChart = new Chart(barCtx,{
+      type:'bar',
+      data:{
+        labels,
+        datasets:[{data:vals,backgroundColor:colors,borderRadius:4,borderSkipped:false}]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},
+          tooltip:{callbacks:{label:c=>` ${c.parsed.y} student${c.parsed.y!==1?'s':''}`}}
+        },
+        scales:{
+          y:{ticks:{stepSize:1,font:{size:9}},grid:{color:'#1e2540'}},
+          x:{ticks:{font:{size:9}},grid:{display:false}}
+        }
+      }
+    });
+  }
+}
+
+// ═══════════════════════════════
+//  FEATURE 3: SESSION REPORT
+// ═══════════════════════════════
+function openReport(){
+  if(!sessionId)return;
+  window.open(`/api/session/${sessionId}/report`, '_blank');
+}
+
+// ═══════════════════════════════
+//  FEATURE 5: SOUND ALERTS
+// ═══════════════════════════════
+function toggleSound(){
+  soundEnabled=!soundEnabled;
+  const btn=document.getElementById('soundBtn');
+  btn.textContent=soundEnabled?'🔔 Sound ON':'🔕 Sound OFF';
+  btn.className='sound-btn'+(soundEnabled?' on':'');
+  toast(soundEnabled?'🔔 Sound alerts ON':'🔕 Sound alerts OFF');
+}
+
+function playSound(freq=440){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.frequency.value=freq;
+    osc.type='sine';
+    gain.gain.setValueAtTime(0.3,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime+0.4);
+  }catch(e){}
+}
+
+// ═══════════════════════════════
+//  FEATURE 6: MULTI-LANGUAGE (handled in backend, UI just shows detected emotion)
+// The student card already shows the emotion regardless of what language was typed.
+// Backend VADER + keyword detection handles Hindi/other languages via Unicode matching.
+// ═══════════════════════════════
+
+// ═══════════════════════════════
+//  STUDENT DETAIL
+// ═══════════════════════════════
+function detail(name){
+  const s=students[name];
+  const hist=(emotionHistory[name]||[]).map(e=>EMOJI[e]||'😐').join(' ');
+  alert(`👤 ${s.name}\n────────────────\nEmotion     : ${s.emotion} ${EMOJI[s.emotion]||''}\nState       : ${s.learning_state||s.emotion}\nConfidence  : ${Math.round((s.confidence||.5)*100)}%\nDuration    : ${s.duration||0}s\nSource      : ${s.source||'none'}\n${s.last_message?`Last message: "${s.last_message}"\n`:''}\nHistory     : ${hist||'no data yet'}`);
+}
+
+// ═══════════════════════════════
+//  HELPERS
+// ═══════════════════════════════
+async function post(path,body){const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});return r.json();}
+async function get(path){const r=await fetch(API+path);return r.json();}
+function toast(msg,dur=3000){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),dur);}
+
+// ═══════════════════════════════
+//  INIT
+// ═══════════════════════════════
+fetch('/api/health').then(r=>r.json()).then(d=>{
+  if(d.status!=='healthy')toast('⚠️ Server health check failed');
+}).catch(()=>toast('❌ Cannot reach server. Start: python app.py'));
+</script>
+</body>
+</html>

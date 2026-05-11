@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+.venv-train/
+env/
+ENV/
+
+# Environment variables
+.env
+.env.local
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+database/*.db
+database/*.db-shm
+database/*.db-wal
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Training artifacts (optional - keep if you want to version control)
+runs/
+*.pt
+# Uncomment below if you want to exclude training data
+# images/train/
+# images/validation/
+
+# Model files (large files - download separately)
+# Uncomment if models are too large for Git
+# models/*.onnx
+# models/*.dat
+# models/*.tflite
+# *.pt
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
+
+# Test outputs
+confusion_matrix.png
+accuracy_report.txt
+preprocessing_demo.png

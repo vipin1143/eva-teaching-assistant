@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EVA – Join Class</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080b14;--surface:#0f1422;--s2:#161c2e;--s3:#1e2540;
+  --border:#242d45;--accent:#6c63ff;--a2:#00d4ff;
+  --green:#00e5a0;--yellow:#ffc247;--red:#ff4d6d;
+  --orange:#ff8c42;--text:#dde4f0;--muted:#5a6688;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  min-height:100vh;display:flex;align-items:flex-start;
+  justify-content:center;padding:24px 16px;
+}
+
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:32px;width:100%;max-width:460px;
+}
+
+/* ── LOGO ── */
+.logo{font-size:2rem;font-weight:700;color:var(--accent);text-align:center;margin-bottom:4px;letter-spacing:-1px;}
+.sub{color:var(--muted);font-size:.85rem;text-align:center;margin-bottom:26px;}
+
+/* ── FORM ── */
+.lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;}
+.inp{
+  width:100%;background:var(--s2);border:1px solid var(--border);
+  border-radius:8px;padding:11px 14px;color:var(--text);
+  font-size:.95rem;outline:none;margin-bottom:14px;
+  font-family:inherit;transition:border .2s;
+}
+.inp:focus{border-color:var(--accent);}
+.inp.err{border-color:var(--red);animation:shake .4s ease;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.btn-join{
+  width:100%;padding:13px;border-radius:10px;border:none;
+  background:linear-gradient(135deg,var(--accent),var(--a2));
+  color:#fff;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .2s;
+}
+.btn-join:hover{opacity:.88;}
+.btn-join:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ── STATUS ── */
+.status{
+  padding:11px 15px;border-radius:10px;font-size:.82rem;
+  margin:12px 0;text-align:center;border:1px solid;display:none;
+}
+.s-ok  {background:rgba(0,229,160,.1);border-color:rgba(0,229,160,.3);color:var(--green);}
+.s-err {background:rgba(255,77,109,.1);border-color:rgba(255,77,109,.3);color:var(--red);}
+.s-warn{background:rgba(255,194,71,.1);border-color:rgba(255,194,71,.3);color:var(--yellow);}
+
+/* ── CAMERA ── */
+.cam-wrap{
+  position:relative;border-radius:12px;overflow:hidden;
+  background:#000;aspect-ratio:4/3;border:1px solid var(--border);
+  margin-bottom:10px;
+}
+#video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1);}
+.cam-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(transparent,rgba(0,0,0,.85));
+  padding:8px 12px;display:flex;align-items:center;justify-content:space-between;
+}
+.emotion-live{display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;}
+.eemoji{font-size:1.3rem;}
+.send-ind{
+  display:none;align-items:center;gap:5px;
+  font-size:.7rem;color:var(--green);
+}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ── STATS ROW ── */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;}
+.sbox{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+.snum{font-size:1.3rem;font-weight:700;font-family:'DM Mono',monospace;}
+.slbl{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+
+/* ── SECTION DIVIDER ── */
+.divider{
+  display:flex;align-items:center;gap:10px;
+  margin:18px 0 14px;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:1px;
+}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── CHAT INPUT ── */
+.chat-area{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.chat-history{
+  background:var(--s2);border:1px solid var(--border);border-radius:10px;
+  padding:10px 12px;min-height:80px;max-height:140px;
+  overflow-y:auto;display:flex;flex-direction:column;gap:6px;
+  font-size:.82rem;
+}
+.chat-history::-webkit-scrollbar{width:3px;}
+.chat-history::-webkit-scrollbar-thumb{background:var(--border);}
+.chat-msg{padding:5px 10px;border-radius:8px;max-width:90%;line-height:1.5;}
+.chat-msg.sent{background:rgba(108,99,255,.2);border:1px solid rgba(108,99,255,.3);align-self:flex-end;color:var(--text);}
+.chat-msg.empty-hint{color:var(--muted);font-size:.78rem;font-style:italic;align-self:center;padding:16px 0;}
+.chat-emotion-tag{
+  font-size:.65rem;margin-top:3px;
+  display:flex;align-items:center;gap:3px;opacity:.7;
+}
+
+.chat-input-row{display:flex;gap:8px;}
+.chat-inp{
+  flex:1;background:var(--s2);border:1px solid var(--border);
+  border-radius:10px;padding:10px 14px;color:var(--text);
+  font-size:.9rem;outline:none;font-family:inherit;
+  transition:border .2s;resize:none;
+}
+.chat-inp:focus{border-color:var(--accent);}
+.btn-send{
+  padding:10px 18px;border-radius:10px;border:none;
+  background:var(--accent);color:#fff;font-size:.9rem;
+  cursor:pointer;transition:opacity .2s;white-space:nowrap;
+  font-weight:600;
+}
+.btn-send:hover{opacity:.85;}
+.btn-send:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ── VOICE BUTTON ── */
+.voice-row{display:flex;gap:10px;align-items:center;}
+.btn-voice{
+  flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);
+  background:var(--s2);color:var(--muted);font-size:.9rem;
+  cursor:pointer;transition:all .25s;display:flex;align-items:center;
+  justify-content:center;gap:8px;font-weight:600;font-family:inherit;
+}
+.btn-voice:hover{border-color:var(--accent);color:var(--accent);}
+.btn-voice.recording{
+  background:rgba(255,77,109,.12);border-color:var(--red);
+  color:var(--red);animation:pulse-rec 1.2s infinite;
+}
+@keyframes pulse-rec{0%,100%{box-shadow:0 0 0 0 rgba(255,77,109,.3)}50%{box-shadow:0 0 0 8px rgba(255,77,109,0)}}
+
+.voice-status{font-size:.75rem;color:var(--muted);text-align:center;min-height:18px;}
+
+/* ── NOTE ── */
+.note{margin-top:16px;color:var(--muted);font-size:.75rem;text-align:center;line-height:1.7;}
+.note strong{color:var(--text);}
+
+/* ── HELP BUTTON ── */
+.btn-help{
+  width:100%;padding:11px;border-radius:10px;border:1px solid rgba(255,140,66,.4);
+  background:rgba(255,140,66,.08);color:var(--orange);font-size:.88rem;
+  cursor:pointer;transition:all .2s;font-weight:600;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  margin-bottom:10px;
+}
+.btn-help:hover{background:rgba(255,140,66,.15);}
+
+#canvas{display:none;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">EVA</div>
+  <div class="sub">Adaptive Teaching Assistant — Student Portal</div>
+
+  <!-- ── JOIN FORM ── -->
+  <div id="joinForm">
+    <div class="lbl">Your Full Name</div>
+    <input class="inp" id="nameInput" type="text" placeholder="e.g. Vipin Yadav"
+           onkeydown="if(event.key==='Enter')joinSession()"/>
+    <div class="lbl">Session ID (from teacher)</div>
+    <input class="inp" id="sessionInput" type="number" placeholder="e.g. 6"
+           onkeydown="if(event.key==='Enter')joinSession()"/>
+    <button class="btn-join" id="joinBtn" onclick="joinSession()">Join Class Session</button>
+  </div>
+
+  <!-- ── STATUS MESSAGE ── -->
+  <div class="status" id="statusBox"></div>
+
+  <!-- ── CONNECTED SECTION ── -->
+  <div id="connectedSection" style="display:none">
+
+    <!-- Camera preview -->
+    <div class="cam-wrap">
+      <video id="video" autoplay muted playsinline></video>
+      <div class="cam-bar">
+        <div class="emotion-live">
+          <span class="eemoji" id="eemoji">😐</span>
+          <span id="elabel" style="color:var(--muted)">Detecting...</span>
+        </div>
+        <div class="send-ind" id="sendInd">
+          <div class="sdot"></div>Sending
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="sbox"><div class="snum" id="framesSent" style="color:var(--a2)">0</div><div class="slbl">Frames sent</div></div>
+      <div class="sbox"><div class="snum" id="lastEmotion" style="color:var(--accent)">—</div><div class="slbl">Last emotion</div></div>
+      <div class="sbox"><div class="snum" id="sidDisplay" style="color:var(--green)">—</div><div class="slbl">Session ID</div></div>
+    </div>
+
+    <!-- Quick help button -->
+    <button class="btn-help" onclick="sendQuickHelp()">
+      🆘 I need help / I'm confused
+    </button>
+
+    <!-- ── CHAT SECTION ── -->
+    <div class="divider">Chat with teacher</div>
+
+    <div class="chat-area">
+      <div class="chat-history" id="chatHistory">
+        <div class="chat-msg empty-hint" id="chatHint">
+          Type a message — your teacher will see your emotion too
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <textarea class="chat-inp" id="chatInp" rows="1"
+          placeholder="Ask a question or say how you're feeling..."
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"
+          oninput="autoResize(this)"></textarea>
+        <button class="btn-send" id="sendBtn" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+
+    <!-- ── VOICE SECTION ── -->
+    <div class="divider">Voice input</div>
+
+    <div class="voice-row">
+      <button class="btn-voice" id="voiceBtn" onclick="toggleVoice()">
+        🎤 Hold to speak
+      </button>
+    </div>
+    <div class="voice-status" id="voiceStatus">Press the button and speak your question</div>
+
+    <div class="note">
+      <strong>✅ You are connected.</strong><br>
+      Camera emotion + chat messages are visible to your teacher.<br>
+      <strong>No video is stored or shared.</strong>
+    </div>
+  </div>
+
+</div>
+<canvas id="canvas"></canvas>
+
+<script>
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+const API = window.location.origin;
+let sessionId = null, studentName = '';
+let framesSentCount = 0;
+let captureInterval = null;
+let mediaRecorder = null;
+let isRecording = false;
+
+const EMOJI_MAP = {
+  happy:'😊',engaged:'🙂',neutral:'😐',confused:'🤔',
+  bored:'😒',sad:'😢',angry:'😠',anxious:'😰',
+  frustrated:'😤',disengaged:'😶',surprise:'😲',fear:'😨'
+};
+
+const EMOTION_COLOR = {
+  happy:'var(--green)',engaged:'var(--green)',
+  confused:'var(--orange)',angry:'var(--red)',frustrated:'var(--red)',
+  anxious:'var(--yellow)',sad:'#74b9ff',bored:'var(--purple,#b47aff)',
+  neutral:'var(--muted)',disengaged:'var(--muted)'
+};
+
+// ══════════════════════════════════════════════
+//  JOIN SESSION
+// ══════════════════════════════════════════════
+async function joinSession() {
+  const name = document.getElementById('nameInput').value.trim();
+  const sid  = parseInt(document.getElementById('sessionInput').value.trim());
+
+  if (!name) { flashInp('nameInput', 'Please enter your name'); return; }
+  if (!sid)  { flashInp('sessionInput', 'Please enter the Session ID'); return; }
+
+  const btn = document.getElementById('joinBtn');
+  btn.disabled = true;
+  btn.textContent = 'Connecting...';
+
+  try {
+    const res = await post('/api/student/join', { student_name: name, session_id: sid });
+
+    if (!res.success) {
+      showStatus(`❌ ${res.message || 'Could not join'}`, 'err');
+      flashInp('sessionInput', '');
+      btn.disabled = false;
+      btn.textContent = 'Join Class Session';
+      return;
+    }
+
+    // ── Joined successfully ──
+    studentName = name;
+    sessionId   = sid;
+    document.getElementById('joinForm').style.display    = 'none';
+    document.getElementById('connectedSection').style.display = 'block';
+    document.getElementById('sidDisplay').textContent    = sid;
+    showStatus(`✅ Connected as "${name}" to Session #${sid}`, 'ok');
+    await startCamera();
+
+  } catch(e) {
+    showStatus('❌ Cannot reach server. Is python app.py running?', 'err');
+    btn.disabled = false;
+    btn.textContent = 'Join Class Session';
+  }
+}
+
+// ══════════════════════════════════════════════
+//  CAMERA  — sends face frames every 3s
+// ══════════════════════════════════════════════
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { width:320, height:240, facingMode:'user' }
+    });
+    const video = document.getElementById('video');
+    video.srcObject = stream;
+    await new Promise(r => video.onloadedmetadata = r);
+
+    // Send first frame after 1s then every 3s
+    setTimeout(sendFrame, 1000);
+    captureInterval = setInterval(sendFrame, 3000);
+
+  } catch(e) {
+    if (e.name === 'NotAllowedError') {
+      showStatus('⚠️ Camera denied. Chat & voice still work for emotion detection.', 'warn');
+    } else {
+      showStatus(`⚠️ Camera unavailable: ${e.message}`, 'warn');
+    }
+  }
+}
+
+async function sendFrame() {
+  const video  = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  if (!video.srcObject || video.readyState < 2) return;
+
+  canvas.width = 320; canvas.height = 240;
+  const ctx = canvas.getContext('2d');
+  ctx.translate(320, 0); ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0, 320, 240);
+  const b64 = canvas.toDataURL('image/jpeg', 0.75).split(',')[1];
+
+  // Flash "Sending" indicator
+  const si = document.getElementById('sendInd');
+  si.style.display = 'flex';
+  setTimeout(() => si.style.display = 'none', 800);
+
+  try {
+    const res = await post('/api/emotion/student-frame', {
+      student_id: studentName, student_name: studentName,
+      image_b64: b64, session_id: sessionId
+    });
+
+    if (res.success) {
+      framesSentCount++;
+      const emotion = res.emotion || 'neutral';
+      updateEmotionUI(emotion);
+      document.getElementById('framesSent').textContent  = framesSentCount;
+      document.getElementById('lastEmotion').textContent = emotion;
+    }
+  } catch(e) { console.warn('Frame send failed:', e.message); }
+}
+
+function updateEmotionUI(emotion) {
+  document.getElementById('eemoji').textContent  = EMOJI_MAP[emotion] || '😐';
+  document.getElementById('elabel').textContent  = emotion;
+  document.getElementById('elabel').style.color  = EMOTION_COLOR[emotion] || 'var(--muted)';
+}
+
+// ══════════════════════════════════════════════
+//  CHAT  — sends message + detects sentiment
+// ══════════════════════════════════════════════
+async function sendChat() {
+  const inp  = document.getElementById('chatInp');
+  const text = inp.value.trim();
+  if (!text || !sessionId) return;
+
+  inp.value = '';
+  autoResize(inp);
+  document.getElementById('sendBtn').disabled = true;
+
+  // Remove empty hint
+  const hint = document.getElementById('chatHint');
+  if (hint) hint.remove();
+
+  // Add message to local chat history
+  addChatBubble(text, null);
+
+  try {
+    const res = await post('/api/chat/analyze', {
+      student_name: studentName,
+      message: text,
+      session_id: sessionId
+    });
+
+    // Update the last bubble with emotion tag
+    if (res.emotion) {
+      const emotion = res.emotion;
+      updateEmotionUI(emotion);
+      updateLastBubbleEmotion(emotion);
+      document.getElementById('lastEmotion').textContent = emotion;
+    }
+  } catch(e) {
+    console.warn('Chat send failed:', e.message);
+  }
+
+  document.getElementById('sendBtn').disabled = false;
+  inp.focus();
+}
+
+function addChatBubble(text, emotion) {
+  const history = document.getElementById('chatHistory');
+  const div = document.createElement('div');
+  div.className = 'chat-msg sent';
+  div.id = `msg-${Date.now()}`;
+  div.innerHTML = `
+    <div>${escHtml(text)}</div>
+    <div class="chat-emotion-tag" id="tag-${Date.now()}">
+      ${emotion ? `${EMOJI_MAP[emotion]||'😐'} ${emotion} detected` : '⏳ Analyzing...'}
+    </div>`;
+  history.appendChild(div);
+  history.scrollTop = history.scrollHeight;
+}
+
+function updateLastBubbleEmotion(emotion) {
+  const bubbles = document.querySelectorAll('.chat-msg.sent .chat-emotion-tag');
+  const last    = bubbles[bubbles.length - 1];
+  if (last) last.textContent = `${EMOJI_MAP[emotion]||'😐'} ${emotion} detected`;
+}
+
+// ══════════════════════════════════════════════
+//  QUICK HELP BUTTON
+// ══════════════════════════════════════════════
+async function sendQuickHelp() {
+  const messages = [
+    "I don't understand this topic",
+    "I'm confused, can you explain again?",
+    "I need help with this",
+    "This is not clear to me"
+  ];
+  const msg = messages[Math.floor(Math.random() * messages.length)];
+  document.getElementById('chatInp').value = msg;
+  await sendChat();
+  showStatus('🆘 Help request sent to teacher!', 'warn');
+}
+
+// ══════════════════════════════════════════════
+//  VOICE  — record mic, transcribe, send as chat
+// ══════════════════════════════════════════════
+async function toggleVoice() {
+  const btn  = document.getElementById('voiceBtn');
+  const stat = document.getElementById('voiceStatus');
+
+  if (!isRecording) {
+    // Start recording
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const chunks = [];
+
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        stat.textContent = '⏳ Processing speech...';
+
+        // Use Web Speech API for transcription (no extra library needed)
+        // OR send audio to backend STT endpoint
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        await processVoiceBlob(blob);
+      };
+
+      mediaRecorder.start();
+      isRecording = true;
+      btn.className = 'btn-voice recording';
+      btn.innerHTML = '🔴 Recording... (click to stop)';
+      stat.textContent = '🎤 Listening — speak your question...';
+
+    } catch(e) {
+      stat.textContent = `❌ Mic unavailable: ${e.message}`;
+    }
+
+  } else {
+    // Stop recording
+    mediaRecorder?.stop();
+    isRecording = false;
+    btn.className = 'btn-voice';
+    btn.innerHTML = '🎤 Hold to speak';
+  }
+}
+
+async function processVoiceBlob(blob) {
+  const stat = document.getElementById('voiceStatus');
+  const btn  = document.getElementById('voiceBtn');
+
+  // Method 1: Use browser's Web Speech API (best, no backend needed)
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    stat.textContent = '✅ Use the mic button below for real-time speech';
+    startWebSpeech();
+    return;
+  }
+
+  // Method 2: Send audio blob to backend
+  try {
+    const reader  = new FileReader();
+    reader.onload = async () => {
+      const b64 = reader.result.split(',')[1];
+      const res = await post('/api/voice/listen', { audio: b64 });
+      if (res.text && res.text.trim()) {
+        document.getElementById('chatInp').value = res.text;
+        stat.textContent = `✅ Heard: "${res.text}"`;
+        await sendChat();
+      } else {
+        stat.textContent = "Couldn't understand. Try again or type your question.";
+      }
+    };
+    reader.readAsDataURL(blob);
+  } catch(e) {
+    stat.textContent = 'Voice processing failed. Please type instead.';
+  }
+}
+
+// Web Speech API — real-time browser transcription (best approach)
+let speechRecognition = null;
+function startWebSpeech() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    document.getElementById('voiceStatus').textContent = 'Voice not supported in this browser. Use Chrome.';
+    return;
+  }
+
+  const btn  = document.getElementById('voiceBtn');
+  const stat = document.getElementById('voiceStatus');
+
+  if (speechRecognition) {
+    speechRecognition.stop();
+    speechRecognition = null;
+    btn.className = 'btn-voice';
+    btn.innerHTML = '🎤 Hold to speak';
+    stat.textContent = 'Press the button and speak your question';
+    return;
+  }
+
+  speechRecognition = new SpeechRecognition();
+  speechRecognition.lang = 'en-US';
+  speechRecognition.continuous = false;
+  speechRecognition.interimResults = true;
+
+  speechRecognition.onstart = () => {
+    btn.className = 'btn-voice recording';
+    btn.innerHTML = '🔴 Listening... (click to stop)';
+    stat.textContent = '🎤 Speak now...';
+    isRecording = true;
+  };
+
+  speechRecognition.onresult = (event) => {
+    const transcript = Array.from(event.results)
+      .map(r => r[0].transcript).join('');
+    document.getElementById('chatInp').value = transcript;
+    stat.textContent = `Heard: "${transcript}"`;
+  };
+
+  speechRecognition.onend = async () => {
+    isRecording = false;
+    btn.className = 'btn-voice';
+    btn.innerHTML = '🎤 Hold to speak';
+    const text = document.getElementById('chatInp').value.trim();
+    if (text) {
+      stat.textContent = `✅ Sending: "${text}"`;
+      await sendChat();
+      stat.textContent = 'Message sent! Press button to speak again.';
+    } else {
+      stat.textContent = "Didn't catch that. Try again.";
+    }
+    speechRecognition = null;
+  };
+
+  speechRecognition.onerror = (e) => {
+    stat.textContent = `Error: ${e.error}. Try again.`;
+    btn.className = 'btn-voice';
+    btn.innerHTML = '🎤 Hold to speak';
+    speechRecognition = null;
+    isRecording = false;
+  };
+
+  speechRecognition.start();
+}
+
+// Override voice button to use Web Speech directly
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('voiceBtn');
+  if (btn) {
+    btn.onclick = () => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        startWebSpeech();
+      } else {
+        toggleVoice();
+      }
+    };
+  }
+});
+
+// ══════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════
+async function post(path, body) {
+  const r = await fetch(API + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+
+function showStatus(msg, type) {
+  const box = document.getElementById('statusBox');
+  box.textContent = msg;
+  box.className   = `status s-${type}`;
+  box.style.display = 'block';
+}
+
+function flashInp(id, msg) {
+  const el = document.getElementById(id);
+  el.classList.add('err');
+  if (msg) showStatus(`⚠️ ${msg}`, 'warn');
+  setTimeout(() => el.classList.remove('err'), 500);
+  el.focus();
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+fetch('/api/health')
+  .then(r => r.json())
+  .then(d => { if (d.status !== 'healthy') showStatus('⚠️ Server check failed', 'warn'); })
+  .catch(() => showStatus('❌ Cannot reach server. Start: python app.py', 'err'));
+</script>
+</body>
+</html>
